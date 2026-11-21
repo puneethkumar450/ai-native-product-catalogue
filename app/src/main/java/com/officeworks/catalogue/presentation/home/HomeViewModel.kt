@@ -7,6 +7,7 @@ import com.officeworks.catalogue.domain.usecase.GetFeaturedProducts
 import com.officeworks.catalogue.domain.usecase.GetCategories
 import com.officeworks.catalogue.domain.usecase.GetProductsByCategory
 import com.officeworks.catalogue.domain.usecase.SearchProducts
+import com.officeworks.catalogue.domain.usecase.GetAllProducts
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -20,6 +21,8 @@ data class HomeUiState(
     val selectedCategory: String? = null,
     val searchQuery: String? = null,
     val searchResults: List<Product> = emptyList(),
+    val allProducts: List<Product> = emptyList(),
+    val isShowingAllProducts: Boolean = false,
     val error: String? = null,
 )
 
@@ -28,6 +31,7 @@ class HomeViewModel(
     private val getCategories: GetCategories,
     private val getProductsByCategory: GetProductsByCategory,
     private val searchProducts: SearchProducts,
+    private val getAllProducts: GetAllProducts,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState = _uiState.asStateFlow()
@@ -38,7 +42,7 @@ class HomeViewModel(
     fun loadFeaturedProducts() {
         val requestId = ++catalogueRequestId
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null, selectedCategory = null, searchQuery = null)
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null, selectedCategory = null, searchQuery = null, isShowingAllProducts = false)
             val featuredResult = runCatching { getFeaturedProducts() }
             if (requestId != catalogueRequestId) return@launch
             val products = featuredResult.getOrElse {
@@ -53,6 +57,8 @@ class HomeViewModel(
                 categories = emptyList(),
                 categoriesError = null,
                 searchResults = emptyList(),
+                allProducts = emptyList(),
+                isShowingAllProducts = false,
             )
 
             val categoriesResult = runCatching { getCategories() }
@@ -75,7 +81,7 @@ class HomeViewModel(
     fun selectCategory(category: String) {
         val requestId = ++catalogueRequestId
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null, selectedCategory = category, searchQuery = null)
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null, selectedCategory = category, searchQuery = null, isShowingAllProducts = false)
             val result = runCatching { getProductsByCategory(category) }
             if (requestId != catalogueRequestId || _uiState.value.selectedCategory != category) return@launch
             result.onSuccess { products -> _uiState.value = _uiState.value.copy(isLoading = false, categoryProducts = products) }
@@ -88,7 +94,7 @@ class HomeViewModel(
         if (term.isEmpty()) return
         val requestId = ++catalogueRequestId
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null, selectedCategory = null, searchQuery = term)
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null, selectedCategory = null, searchQuery = term, isShowingAllProducts = false)
             val result = runCatching { searchProducts(term) }
             if (requestId != catalogueRequestId || _uiState.value.searchQuery != term) return@launch
             result.onSuccess { products -> _uiState.value = _uiState.value.copy(isLoading = false, searchResults = products) }
@@ -96,8 +102,22 @@ class HomeViewModel(
         }
     }
 
+    fun showAllProducts() {
+        val requestId = ++catalogueRequestId
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null, selectedCategory = null, searchQuery = null, isShowingAllProducts = true)
+            runCatching { getAllProducts() }
+                .onSuccess { products ->
+                    if (requestId == catalogueRequestId) _uiState.value = _uiState.value.copy(isLoading = false, allProducts = products)
+                }
+                .onFailure {
+                    if (requestId == catalogueRequestId) _uiState.value = _uiState.value.copy(isLoading = false, error = "Couldn't load products. Please try again.")
+                }
+        }
+    }
+
     fun backToHome() {
         catalogueRequestId += 1
-        _uiState.value = _uiState.value.copy(isLoading = false, error = null, selectedCategory = null, searchQuery = null)
+        _uiState.value = _uiState.value.copy(isLoading = false, error = null, selectedCategory = null, searchQuery = null, isShowingAllProducts = false)
     }
 }

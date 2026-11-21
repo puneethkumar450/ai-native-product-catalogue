@@ -7,6 +7,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 class ProductRepositoryImpl(private val api: CatalogueApi) : ProductRepository {
+    override suspend fun getAllProducts(): List<Product> = withContext(Dispatchers.IO) {
+        api.getAllProducts()
+    }
+
     override suspend fun getFeaturedProducts(): List<Product> = withContext(Dispatchers.IO) {
         api.getFeaturedProducts()
     }
