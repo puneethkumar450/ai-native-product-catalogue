@@ -2,6 +2,7 @@ package com.officeworks.catalogue.presentation.home
 
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -168,7 +169,7 @@ fun HomeScreen(
                         else -> state.featuredProducts
                     }
                     if (products.isEmpty()) item { Text("No matching products found.", Modifier.padding(top = 12.dp)) }
-                    items(products, key = Product::id) { product -> ProductCard(product) }
+                    items(products, key = Product::id) { product -> ProductCard(product, onClick = { onProductClick(product.id) }) }
                 }
             }
         }
@@ -176,9 +177,9 @@ fun HomeScreen(
 }
 
 @Composable
-private fun ProductCard(product: Product) {
+private fun ProductCard(product: Product, onClick: () -> Unit) {
     ElevatedCard(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface),
     ) {

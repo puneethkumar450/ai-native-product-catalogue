@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.BackHandler
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.collectAsState
@@ -17,9 +18,11 @@ import com.officeworks.catalogue.domain.usecase.GetCategories
 import com.officeworks.catalogue.domain.usecase.GetProductsByCategory
 import com.officeworks.catalogue.domain.usecase.SearchProducts
 import com.officeworks.catalogue.domain.usecase.GetAllProducts
+import com.officeworks.catalogue.domain.usecase.GetProductDetails
 import com.officeworks.catalogue.presentation.home.HomeScreen
 import com.officeworks.catalogue.presentation.home.HomeViewModel
 import com.officeworks.catalogue.presentation.home.HomeViewModelFactory
+import com.officeworks.catalogue.presentation.product.ProductDetailScreen
 import com.officeworks.catalogue.presentation.product.ProductDetailScreen
 
 class MainActivity : ComponentActivity() {
@@ -31,6 +34,7 @@ class MainActivity : ComponentActivity() {
             GetProductsByCategory(repository),
             SearchProducts(repository),
             GetAllProducts(repository),
+            GetProductDetails(repository),
         )
     }
 
@@ -50,13 +54,21 @@ class MainActivity : ComponentActivity() {
                 ),
             ) {
                 val state by viewModel.uiState.collectAsState()
-                HomeScreen(
+                val productOpen = state.selectedProduct != null || state.isProductLoading || state.productError != null
+                BackHandler(enabled = productOpen) { viewModel.closeProduct() }
+                if (productOpen) ProductDetailScreen(
+                    product = state.selectedProduct,
+                    isLoading = state.isProductLoading,
+                    error = state.productError,
+                    onBack = viewModel::closeProduct,
+                ) else HomeScreen(
                     state = state,
                     onRetry = viewModel::retry,
                     onCategorySelected = viewModel::selectCategory,
                     onBackToHome = viewModel::backToHome,
                     onSearch = viewModel::search,
                     onClearSearch = viewModel::showAllProducts,
+                    onProductClick = viewModel::openProduct,
                 )
             }
         }

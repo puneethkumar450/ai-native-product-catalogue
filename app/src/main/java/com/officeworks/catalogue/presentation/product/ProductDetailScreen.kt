@@ -14,6 +14,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.officeworks.catalogue.domain.model.Product
 import com.officeworks.catalogue.presentation.home.ProductImage
+import com.officeworks.catalogue.presentation.components.CatalogueTopAppBar
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -31,8 +33,11 @@ fun ProductDetailScreen(
     error: String?,
     onBack: () -> Unit,
 ) {
-    Column(Modifier.fillMaxSize().padding(20.dp)) {
-        TextButton(onClick = onBack) { Text("‹  Back to products") }
+    Scaffold(
+        topBar = { CatalogueTopAppBar(title = "Product details", onNavigateBack = onBack) },
+        containerColor = MaterialTheme.colorScheme.background,
+    ) { contentPadding ->
+    Column(Modifier.fillMaxSize().padding(contentPadding).padding(20.dp)) {
         when {
             isLoading -> Box(Modifier.fillMaxSize().weight(1f), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
@@ -63,5 +68,6 @@ fun ProductDetailScreen(
                 }
             }
         }
+    }
     }
 }

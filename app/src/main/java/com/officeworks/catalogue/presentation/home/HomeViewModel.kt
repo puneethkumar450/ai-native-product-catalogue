@@ -8,6 +8,7 @@ import com.officeworks.catalogue.domain.usecase.GetCategories
 import com.officeworks.catalogue.domain.usecase.GetProductsByCategory
 import com.officeworks.catalogue.domain.usecase.SearchProducts
 import com.officeworks.catalogue.domain.usecase.GetAllProducts
+import com.officeworks.catalogue.domain.usecase.GetProductDetails
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -23,6 +24,9 @@ data class HomeUiState(
     val searchResults: List<Product> = emptyList(),
     val allProducts: List<Product> = emptyList(),
     val isShowingAllProducts: Boolean = false,
+    val selectedProduct: Product? = null,
+    val isProductLoading: Boolean = false,
+    val productError: String? = null,
     val error: String? = null,
 )
 
@@ -32,6 +36,7 @@ class HomeViewModel(
     private val getProductsByCategory: GetProductsByCategory,
     private val searchProducts: SearchProducts,
     private val getAllProducts: GetAllProducts,
+    private val getProductDetails: GetProductDetails,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState = _uiState.asStateFlow()
@@ -133,4 +138,5 @@ class HomeViewModel(
     fun closeProduct() {
         _uiState.value = _uiState.value.copy(selectedProduct = null, isProductLoading = false, productError = null)
     }
+
 }
