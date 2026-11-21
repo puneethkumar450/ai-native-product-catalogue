@@ -62,7 +62,7 @@ class CatalogueScreensTest {
         composeRule.onNodeWithText("Featured products").assertIsDisplayed()
         composeRule.onNodeWithText("Phone Case").assertIsDisplayed()
         composeRule.onAllNodesWithText("Shop by category").assertCountEquals(1)
-        composeRule.onNodeWithText("Electronics").performClick()
+        composeRule.onAllNodesWithText("Electronics")[1].performClick()
         assertEquals("electronics", selectedCategory)
     }
 
