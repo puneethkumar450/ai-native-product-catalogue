@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.activity.compose.BackHandler
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.collectAsState
@@ -19,6 +20,7 @@ import com.officeworks.catalogue.domain.usecase.GetAllProducts
 import com.officeworks.catalogue.presentation.home.HomeScreen
 import com.officeworks.catalogue.presentation.home.HomeViewModel
 import com.officeworks.catalogue.presentation.home.HomeViewModelFactory
+import com.officeworks.catalogue.presentation.product.ProductDetailScreen
 
 class MainActivity : ComponentActivity() {
     private val viewModel: HomeViewModel by viewModels {

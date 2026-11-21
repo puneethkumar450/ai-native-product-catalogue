@@ -64,6 +64,7 @@ fun HomeScreen(
     onRetry: () -> Unit,
     onCategorySelected: (String) -> Unit,
     onSearch: (String) -> Unit,
+    onProductClick: (Int) -> Unit,
     onBackToHome: () -> Unit,
     onClearSearch: () -> Unit,
 ) {
