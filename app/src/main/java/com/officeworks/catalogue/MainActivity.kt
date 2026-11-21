@@ -19,6 +19,7 @@ import com.officeworks.catalogue.domain.usecase.GetProductsByCategory
 import com.officeworks.catalogue.domain.usecase.SearchProducts
 import com.officeworks.catalogue.domain.usecase.GetAllProducts
 import com.officeworks.catalogue.domain.usecase.GetProductDetails
+import com.officeworks.catalogue.domain.usecase.SubmitEnquiry
 import com.officeworks.catalogue.presentation.home.HomeScreen
 import com.officeworks.catalogue.presentation.home.HomeViewModel
 import com.officeworks.catalogue.presentation.home.HomeViewModelFactory
@@ -35,6 +36,7 @@ class MainActivity : ComponentActivity() {
             SearchProducts(repository),
             GetAllProducts(repository),
             GetProductDetails(repository),
+            SubmitEnquiry(repository),
         )
     }
 

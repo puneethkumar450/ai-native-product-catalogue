@@ -8,6 +8,7 @@ import com.officeworks.catalogue.domain.usecase.GetProductsByCategory
 import com.officeworks.catalogue.domain.usecase.SearchProducts
 import com.officeworks.catalogue.domain.usecase.GetAllProducts
 import com.officeworks.catalogue.domain.usecase.GetProductDetails
+import com.officeworks.catalogue.domain.usecase.SubmitEnquiry
 
 class HomeViewModelFactory(
     private val getFeaturedProducts: GetFeaturedProducts,
@@ -16,6 +17,7 @@ class HomeViewModelFactory(
     private val searchProducts: SearchProducts,
     private val getAllProducts: GetAllProducts,
     private val getProductDetails: GetProductDetails,
+    private val submitEnquiry: SubmitEnquiry,
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
