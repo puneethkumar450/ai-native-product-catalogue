@@ -4,4 +4,6 @@ import com.officeworks.catalogue.domain.model.Product
 
 interface ProductRepository {
     suspend fun getFeaturedProducts(): List<Product>
+    suspend fun getCategories(): List<String>
+    suspend fun getProductsByCategory(category: String): List<Product>
 }

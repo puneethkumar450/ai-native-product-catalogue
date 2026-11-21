@@ -10,4 +10,12 @@ class ProductRepositoryImpl(private val api: CatalogueApi) : ProductRepository {
     override suspend fun getFeaturedProducts(): List<Product> = withContext(Dispatchers.IO) {
         api.getFeaturedProducts()
     }
+
+    override suspend fun getCategories(): List<String> = withContext(Dispatchers.IO) {
+        api.getCategories()
+    }
+
+    override suspend fun getProductsByCategory(category: String): List<Product> = withContext(Dispatchers.IO) {
+        api.getProductsByCategory(category)
+    }
 }
