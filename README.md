@@ -40,7 +40,7 @@ The backend binds to `0.0.0.0`, which allows the physical-device option. For loc
 ./gradlew installDebug -PAPI_BASE_URL=http://192.168.1.20:3000
 ```
 
-Requires JDK 17 and Android SDK platform 36. From the repository root run `./gradlew installDebug` with an emulator running. This first Android slice displays the five featured products.
+Requires JDK 17 and Android SDK platform 36. From the repository root run `./gradlew installDebug` with an emulator running. The app displays the five featured products and lets customers browse category products with the highest rated first.
 
 ### API routes
 

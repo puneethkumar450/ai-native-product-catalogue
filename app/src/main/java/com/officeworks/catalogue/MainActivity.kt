@@ -11,6 +11,8 @@ import androidx.compose.runtime.getValue
 import com.officeworks.catalogue.data.remote.CatalogueApi
 import com.officeworks.catalogue.data.repository.ProductRepositoryImpl
 import com.officeworks.catalogue.domain.usecase.GetFeaturedProducts
+import com.officeworks.catalogue.domain.usecase.GetCategories
+import com.officeworks.catalogue.domain.usecase.GetProductsByCategory
 import com.officeworks.catalogue.presentation.home.HomeScreen
 import com.officeworks.catalogue.presentation.home.HomeViewModel
 import com.officeworks.catalogue.presentation.home.HomeViewModelFactory
@@ -18,7 +20,11 @@ import com.officeworks.catalogue.presentation.home.HomeViewModelFactory
 class MainActivity : ComponentActivity() {
     private val viewModel: HomeViewModel by viewModels {
         val repository = ProductRepositoryImpl(CatalogueApi(BuildConfig.API_BASE_URL))
-        HomeViewModelFactory(GetFeaturedProducts(repository))
+        HomeViewModelFactory(
+            GetFeaturedProducts(repository),
+            GetCategories(repository),
+            GetProductsByCategory(repository),
+        )
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -26,7 +32,12 @@ class MainActivity : ComponentActivity() {
         setContent {
             MaterialTheme(colorScheme = lightColorScheme()) {
                 val state by viewModel.uiState.collectAsState()
-                HomeScreen(state = state, onRetry = viewModel::retry)
+                HomeScreen(
+                    state = state,
+                    onRetry = viewModel::retry,
+                    onCategorySelected = viewModel::selectCategory,
+                    onBackToHome = viewModel::backToHome,
+                )
             }
         }
     }

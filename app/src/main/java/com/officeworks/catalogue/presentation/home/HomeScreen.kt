@@ -15,16 +15,20 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
@@ -46,18 +50,38 @@ import java.text.NumberFormat
 import java.util.Locale
 
 @Composable
-fun HomeScreen(state: HomeUiState, onRetry: () -> Unit) {
+fun HomeScreen(
+    state: HomeUiState,
+    onRetry: () -> Unit,
+    onCategorySelected: (String) -> Unit,
+    onBackToHome: () -> Unit,
+) {
     Column(
         Modifier.fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .windowInsetsPadding(WindowInsets.safeDrawing),
     ) {
         Column(Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
-            Text("CATALOGUE", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-            Spacer(Modifier.height(8.dp))
-            Text("Find something\nyou’ll love.", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.height(8.dp))
-            Text("Featured products", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (state.selectedCategory == null) {
+                Text("CATALOGUE", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                Spacer(Modifier.height(8.dp))
+                Text("Find something\nyou’ll love.", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(8.dp))
+                Text("Featured products", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (state.categories.isNotEmpty()) {
+                    Spacer(Modifier.height(20.dp))
+                    Text("Shop by category", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        state.categories.forEach { category ->
+                            FilterChip(selected = false, onClick = { onCategorySelected(category) }, label = { Text(category.replaceFirstChar { it.titlecase() }) })
+                        }
+                    }
+                }
+            } else {
+                TextButton(onClick = onBackToHome) { Text("‹  All products") }
+                Text(state.selectedCategory.replaceFirstChar { it.titlecase() }, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                Text("Top rated and more", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
         when {
             state.isLoading -> Box(Modifier.fillMaxSize().weight(1f), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
@@ -66,7 +90,8 @@ fun HomeScreen(state: HomeUiState, onRetry: () -> Unit) {
                 androidx.compose.material3.TextButton(onClick = onRetry) { Text("Try again") }
             }
             else -> LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(state.featuredProducts, key = Product::id) { product -> ProductCard(product) }
+                val products = if (state.selectedCategory == null) state.featuredProducts else state.categoryProducts
+                items(products, key = Product::id) { product -> ProductCard(product) }
             }
         }
     }
