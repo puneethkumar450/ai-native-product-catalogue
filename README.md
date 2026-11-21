@@ -82,6 +82,16 @@ Requires JDK 17 and Android SDK platform 36. With an emulator running and the ba
 
 The Android app includes the featured-products home screen, category browsing, submitted search, product details, and an enquiry form. It follows presentation → domain → data boundaries: the ViewModel calls use cases, use cases use a repository interface, and the data repository loads JSON from the backend API. Enquiry submissions return the backend's thank-you response after the email has been accepted.
 
+### Android screen tests
+
+With an Android Emulator running, run the Compose screen tests from the repository root:
+
+```sh
+./gradlew connectedDebugAndroidTest
+```
+
+The tests cover featured products and category navigation, category-load retry, search submission and empty results, product details and its error state, and enquiry validation, submission, errors, and thank-you feedback.
+
 ### API routes
 
 - `GET /health`
