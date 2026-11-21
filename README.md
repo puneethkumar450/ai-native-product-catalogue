@@ -42,17 +42,35 @@ Configure the Android app's API base URL per build/run configuration:
 - **Android Emulator:** `http://10.0.2.2:3000` reaches port 3000 on the development computer.
 - **Physical Android device:** use `http://<computer-LAN-IP>:3000`, for example `http://192.168.1.20:3000`. Put the phone and computer on the same Wi-Fi and allow connections to port 3000 in the computer firewall.
 
-The backend binds to `0.0.0.0`, which allows the physical-device option. For local HTTP on Android, cleartext traffic is enabled only in the debug manifest; use HTTPS for a deployed backend. The app reads its URL from `BuildConfig.API_BASE_URL`, with an emulator-friendly default. Override it without editing source:
+The backend binds to `0.0.0.0`, which allows the physical-device option. For local HTTP on Android, cleartext traffic is enabled only in the debug manifest; use HTTPS for a deployed backend. The app reads its URL from `BuildConfig.API_BASE_URL`, with an emulator-friendly default. Run these commands from the repository root. Start the backend in one terminal:
 
 ```sh
-# Emulator (default)
-./gradlew assembleDebug
-
-# Physical device; replace the address with your computer's LAN IP
-./gradlew installDebug -PAPI_BASE_URL=http://192.168.1.20:3000
+docker compose up --build
 ```
 
-The property can also be set through an `API_BASE_URL` environment variable. The phone and computer must be on the same Wi-Fi, and the computer firewall must allow port 3000. Start the API before launching the app.
+Then install the app from a second terminal. For an Android Emulator:
+
+```sh
+./gradlew installDebug -PAPI_BASE_URL=http://10.0.2.2:3000
+```
+
+For a physical Android device connected with USB debugging, run:
+
+```sh
+LAN_IP="$(ipconfig getifaddr en0)"
+echo "Using computer IP: ${LAN_IP}"
+./gradlew installDebug -PAPI_BASE_URL="http://${LAN_IP}:3000"
+```
+
+Keep the phone and computer on the same Wi-Fi network, and allow incoming connections to port `3000` in the computer firewall. If your Mac's Wi-Fi interface is not `en0`, find it with `networksetup -listallhardwareports` and replace `en0` in the command with the listed device name.
+
+The Gradle property can also be set through an `API_BASE_URL` environment variable. To build without installing to a device or emulator, use:
+
+```sh
+./gradlew assembleDebug
+```
+
+Start the API before launching the app.
 
 ### Android app
 
