@@ -5,8 +5,15 @@ import {
   productSource,
   searchProducts,
 } from "./products.js";
+import { sendProductEnquiry } from "./mailer.js";
 
 const port = Number(process.env.PORT ?? 3000);
+
+class ApiInputError extends Error {
+  constructor(message: string, readonly status: number = 400) {
+    super(message);
+  }
+}
 
 function send(response: ServerResponse, status: number, body: unknown): void {
   response.writeHead(status, { "content-type": "application/json; charset=utf-8" });
@@ -17,9 +24,13 @@ async function readJson(request: IncomingMessage): Promise<unknown> {
   let body = "";
   for await (const chunk of request) {
     body += chunk;
-    if (body.length > 16_384) throw new Error("Request body is too large");
+    if (body.length > 16_384) throw new ApiInputError("Request body is too large", 413);
   }
-  return JSON.parse(body);
+  try {
+    return JSON.parse(body);
+  } catch {
+    throw new ApiInputError("Request body must contain valid JSON");
+  }
 }
 
 const server = createServer(async (request, response) => {
@@ -57,36 +68,53 @@ const server = createServer(async (request, response) => {
     }
 
     if (method === "POST" && url.pathname === "/api/enquiries") {
-      const payload = await readJson(request) as Record<string, unknown>;
-      const productId = Number(payload.productId);
-      const name = typeof payload.name === "string" ? payload.name.trim() : "";
-      const email = typeof payload.email === "string" ? payload.email.trim() : "";
-      const message = typeof payload.message === "string" ? payload.message.trim() : "";
+      const contentType = request.headers["content-type"]?.split(";", 1)[0].trim().toLowerCase();
+      if (contentType !== "application/json") {
+        throw new ApiInputError("Content-Type must be application/json", 415);
+      }
+      const payload = await readJson(request);
+      if (payload === null || typeof payload !== "object" || Array.isArray(payload)) {
+        throw new ApiInputError("Request body must be a JSON object");
+      }
+      const fields = payload as Record<string, unknown>;
+      const productId = fields.productId;
+      const name = typeof fields.name === "string" ? fields.name.trim() : "";
+      const email = typeof fields.email === "string" ? fields.email.trim() : "";
+      const message = typeof fields.message === "string" ? fields.message.trim() : "";
 
-      if (!Number.isInteger(productId) || !name || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      if (typeof productId !== "number" || !Number.isSafeInteger(productId) || productId <= 0 || !name || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         return send(response, 400, { error: "Provide a productId, name, and valid email address" });
       }
+      if (fields.message !== undefined && typeof fields.message !== "string") {
+        return send(response, 400, { error: "Message must be text" });
+      }
+      if (name.length > 120) return send(response, 400, { error: "Name must be 120 characters or fewer" });
       if (message.length > 2000) return send(response, 400, { error: "Message must be 2000 characters or fewer" });
 
       const product = await productSource.getById(productId);
       if (!product) return send(response, 404, { error: "Product not found" });
-      console.info("Enquiry received (local email capture):", JSON.stringify({
+      await sendProductEnquiry({
         productId,
         productTitle: product.title,
         name,
         email,
         message,
         receivedAt: new Date().toISOString(),
-      }));
+      });
       return send(response, 201, { message: "Thank you. Your enquiry has been received." });
     }
 
     return send(response, 404, { error: "Route not found" });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unexpected server error";
-    const status = message === "Unexpected end of JSON input" || message === "Request body is too large" ? 400 : 502;
-    console.error(message);
-    return send(response, status, { error: status === 400 ? message : "Catalogue service is temporarily unavailable" });
+    const status = error instanceof ApiInputError ? error.status : error instanceof URIError ? 400 : 502;
+    if (status >= 500) console.error(message);
+    const errorMessage = error instanceof ApiInputError
+      ? message
+      : error instanceof URIError
+        ? "Category path contains invalid encoding"
+        : "Catalogue service is temporarily unavailable";
+    return send(response, status, { error: errorMessage });
   }
 });
 
