@@ -1,0 +1,8 @@
+services:
+  api:
+    build: ./backend
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      PORT: 3000
+      FAKE_STORE_API_URL: ${FAKE_STORE_API_URL:-https://fakestoreapi.com}
