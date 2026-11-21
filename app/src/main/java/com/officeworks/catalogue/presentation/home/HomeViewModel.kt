@@ -120,19 +120,35 @@ class HomeViewModel(
 
     fun closeProduct() {
         catalogueRequestId += 1
-        _uiState.value = _uiState.value.copy(selectedProduct = null, isProductLoading = false, productError = null)
+        _uiState.value = _uiState.value.copy(
+            selectedProduct = null,
+            isProductLoading = false,
+            productError = null,
+            isEnquiryOpen = false,
+            isSubmittingEnquiry = false,
+            enquiryMessage = null,
+            enquiryError = null,
+        )
     }
 
     fun openEnquiry() {
-        _uiState.value = _uiState.value.copy(isEnquiryOpen = true, isSubmittingEnquiry = false, enquiryMessage = null, enquiryError = null)
+        val current = _uiState.value
+        _uiState.value = current.copy(
+            isEnquiryOpen = true,
+            enquiryError = if (current.enquiryMessage == null && !current.isSubmittingEnquiry) null else current.enquiryError,
+        )
     }
 
     fun closeEnquiry() {
-        _uiState.value = _uiState.value.copy(isEnquiryOpen = false, isSubmittingEnquiry = false, enquiryMessage = null, enquiryError = null)
+        val current = _uiState.value
+        if (current.isSubmittingEnquiry) return
+        _uiState.value = current.copy(isEnquiryOpen = false, enquiryError = null)
     }
 
     fun sendEnquiry(name: String, email: String, message: String) {
-        val product = _uiState.value.selectedProduct ?: return
+        val current = _uiState.value
+        if (current.isSubmittingEnquiry || current.enquiryMessage != null) return
+        val product = current.selectedProduct ?: return
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isSubmittingEnquiry = true, enquiryError = null)
             runCatching { submitEnquiry(EnquiryRequest(product.id, name.trim(), email.trim(), message.trim())) }
