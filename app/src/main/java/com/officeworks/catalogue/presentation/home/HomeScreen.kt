@@ -93,12 +93,8 @@ fun HomeScreen(
                     Text("Browse the complete catalogue", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 } else if (category == null) {
                     Text("A better way to browse", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-                    Spacer(Modifier.height(8.dp))
-                    Text("Find something\nyou’ll love.", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(20.dp))
                     Text("Featured products", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-                    Spacer(Modifier.height(4.dp))
-                    Text("A few favourites to get you started", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     if (state.categories.isNotEmpty()) {
                         Spacer(Modifier.height(20.dp))
                         Text("Shop by category", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
