@@ -8,6 +8,8 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 class CatalogueApi(private val baseUrl: String) {
+    fun getAllProducts(): List<Product> = getProducts("/api/products")
+
     fun getFeaturedProducts(): List<Product> = getProducts("/api/products/featured")
 
     fun getCategories(): List<String> {
