@@ -101,15 +101,18 @@ class HomeViewModel(
     }
 
     fun openProduct(id: Int) {
+        val requestId = ++catalogueRequestId
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isProductLoading = true, productError = null)
-            runCatching { getProductDetails(id) }
-                .onSuccess { product -> _uiState.value = _uiState.value.copy(isProductLoading = false, selectedProduct = product) }
+            _uiState.value = _uiState.value.copy(isProductLoading = true, selectedProduct = null, productError = null)
+            val result = runCatching { getProductDetails(id) }
+            if (requestId != catalogueRequestId || !_uiState.value.isProductLoading) return@launch
+            result.onSuccess { product -> _uiState.value = _uiState.value.copy(isProductLoading = false, selectedProduct = product) }
                 .onFailure { _uiState.value = _uiState.value.copy(isProductLoading = false, productError = "Couldn't load product details. Please try again.") }
         }
     }
 
     fun closeProduct() {
+        catalogueRequestId += 1
         _uiState.value = _uiState.value.copy(selectedProduct = null, isProductLoading = false, productError = null)
     }
 }
