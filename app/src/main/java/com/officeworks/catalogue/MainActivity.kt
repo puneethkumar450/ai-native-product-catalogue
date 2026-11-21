@@ -13,6 +13,7 @@ import com.officeworks.catalogue.data.repository.ProductRepositoryImpl
 import com.officeworks.catalogue.domain.usecase.GetFeaturedProducts
 import com.officeworks.catalogue.domain.usecase.GetCategories
 import com.officeworks.catalogue.domain.usecase.GetProductsByCategory
+import com.officeworks.catalogue.domain.usecase.SearchProducts
 import com.officeworks.catalogue.presentation.home.HomeScreen
 import com.officeworks.catalogue.presentation.home.HomeViewModel
 import com.officeworks.catalogue.presentation.home.HomeViewModelFactory
@@ -24,6 +25,7 @@ class MainActivity : ComponentActivity() {
             GetFeaturedProducts(repository),
             GetCategories(repository),
             GetProductsByCategory(repository),
+            SearchProducts(repository),
         )
     }
 
@@ -37,6 +39,7 @@ class MainActivity : ComponentActivity() {
                     onRetry = viewModel::retry,
                     onCategorySelected = viewModel::selectCategory,
                     onBackToHome = viewModel::backToHome,
+                    onSearch = viewModel::search,
                 )
             }
         }

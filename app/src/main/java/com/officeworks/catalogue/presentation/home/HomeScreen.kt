@@ -24,15 +24,20 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
@@ -54,33 +59,48 @@ fun HomeScreen(
     state: HomeUiState,
     onRetry: () -> Unit,
     onCategorySelected: (String) -> Unit,
+    onSearch: (String) -> Unit,
     onBackToHome: () -> Unit,
 ) {
+    var searchText by rememberSaveable(state.searchQuery) { mutableStateOf(state.searchQuery.orEmpty()) }
     Column(
         Modifier.fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .windowInsetsPadding(WindowInsets.safeDrawing),
     ) {
         Column(Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
-            if (state.selectedCategory == null) {
+            if (state.searchQuery != null) {
+                TextButton(onClick = onBackToHome) { Text("‹  All products") }
+                Text("Search results", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                Text("Matching ‘${state.searchQuery}’", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            } else if (state.selectedCategory == null) {
                 Text("CATALOGUE", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.height(8.dp))
                 Text("Find something\nyou’ll love.", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(8.dp))
                 Text("Featured products", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                if (state.categories.isNotEmpty()) {
-                    Spacer(Modifier.height(20.dp))
-                    Text("Shop by category", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        state.categories.forEach { category ->
-                            FilterChip(selected = false, onClick = { onCategorySelected(category) }, label = { Text(category.replaceFirstChar { it.titlecase() }) })
-                        }
-                    }
-                }
             } else {
                 TextButton(onClick = onBackToHome) { Text("‹  All products") }
                 Text(state.selectedCategory.replaceFirstChar { it.titlecase() }, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
                 Text("Top rated and more", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+
+            if (state.selectedCategory == null) {
+                Spacer(Modifier.height(16.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedTextField(value = searchText, onValueChange = { searchText = it }, modifier = Modifier.weight(1f), label = { Text("Search products") }, singleLine = true)
+                    Button(onClick = { onSearch(searchText) }, enabled = searchText.isNotBlank()) { Text("Search") }
+                }
+            }
+
+            if (state.selectedCategory == null && state.searchQuery == null && state.categories.isNotEmpty()) {
+                Spacer(Modifier.height(20.dp))
+                Text("Shop by category", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    state.categories.forEach { category ->
+                        FilterChip(selected = false, onClick = { onCategorySelected(category) }, label = { Text(category.replaceFirstChar { it.titlecase() }) })
+                    }
+                }
             }
         }
         when {
@@ -90,7 +110,12 @@ fun HomeScreen(
                 androidx.compose.material3.TextButton(onClick = onRetry) { Text("Try again") }
             }
             else -> LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                val products = if (state.selectedCategory == null) state.featuredProducts else state.categoryProducts
+                val products = when {
+                    state.searchQuery != null -> state.searchResults
+                    state.selectedCategory != null -> state.categoryProducts
+                    else -> state.featuredProducts
+                }
+                if (products.isEmpty()) item { Text("No matching products found.", Modifier.padding(top = 12.dp)) }
                 items(products, key = Product::id) { product -> ProductCard(product) }
             }
         }
