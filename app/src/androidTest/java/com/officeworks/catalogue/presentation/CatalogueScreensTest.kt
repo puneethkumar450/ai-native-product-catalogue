@@ -9,6 +9,7 @@ import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -53,6 +54,7 @@ class CatalogueScreensTest {
                     onSearch = {},
                     onProductClick = {},
                     onBackToHome = {},
+                    onClearSearch = {},
                 )
             }
         }
@@ -80,6 +82,7 @@ class CatalogueScreensTest {
                     onSearch = {},
                     onProductClick = {},
                     onBackToHome = {},
+                    onClearSearch = {},
                 )
             }
         }
@@ -102,6 +105,7 @@ class CatalogueScreensTest {
                     onSearch = { searchedQuery = it },
                     onProductClick = {},
                     onBackToHome = {},
+                    onClearSearch = {},
                 )
             }
         }
@@ -109,6 +113,27 @@ class CatalogueScreensTest {
         composeRule.onAllNodes(hasSetTextAction())[0].performTextInput("wireless")
         composeRule.onNodeWithText("Search").performClick()
         assertEquals("wireless", searchedQuery)
+    }
+
+
+    @Test
+    fun clearingSearchLoadsAllProducts() {
+        var clearRequested = false
+        composeRule.setContent {
+            MaterialTheme {
+                HomeScreen(
+                    state = HomeUiState(isLoading = false, searchQuery = "wireless", searchResults = listOf(product)),
+                    onRetry = {},
+                    onCategorySelected = {},
+                    onSearch = {},
+                    onProductClick = {},
+                    onBackToHome = {},
+                    onClearSearch = { clearRequested = true },
+                )
+            }
+        }
+        composeRule.onNodeWithContentDescription("Clear search").performClick()
+        assertEquals(true, clearRequested)
     }
 
     @Test
@@ -122,6 +147,7 @@ class CatalogueScreensTest {
                     onSearch = {},
                     onProductClick = {},
                     onBackToHome = {},
+                    onClearSearch = {},
                 )
             }
         }
