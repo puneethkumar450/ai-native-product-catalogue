@@ -1,5 +1,6 @@
 package com.officeworks.catalogue.data.remote
 
+import android.net.Uri
 import com.officeworks.catalogue.domain.model.Product
 import org.json.JSONArray
 import org.json.JSONObject
@@ -8,6 +9,14 @@ import java.net.URL
 
 class CatalogueApi(private val baseUrl: String) {
     fun getFeaturedProducts(): List<Product> = getProducts("/api/products/featured")
+
+    fun getCategories(): List<String> {
+        val json = JSONArray(get("/api/categories"))
+        return List(json.length()) { index -> json.getString(index) }
+    }
+
+    fun getProductsByCategory(category: String): List<Product> =
+        getProducts("/api/categories/${Uri.encode(category)}/products")
 
     private fun getProducts(path: String): List<Product> = JSONArray(get(path)).toProducts()
 
