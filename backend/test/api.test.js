@@ -19,6 +19,7 @@ const products = [
 let sourceServer;
 let backendProcess;
 let apiBaseUrl;
+let sourceFailureStatus = null;
 
 function listen(server) {
   return new Promise((resolveListen, reject) => {
@@ -38,6 +39,7 @@ function sendJson(response, status, body) {
 before(async () => {
   sourceServer = createServer((request, response) => {
     const path = new URL(request.url ?? "/", "http://localhost").pathname;
+    if (sourceFailureStatus !== null) return sendJson(response, sourceFailureStatus, { error: "Source unavailable" });
     if (path === "/products/categories") return sendJson(response, 200, ["electronics", "jewelery", "men's clothing", "women's clothing"]);
     if (path === "/products") return sendJson(response, 200, products);
     const productMatch = path.match(/^\/products\/(\d+)$/);
@@ -132,6 +134,80 @@ test("product endpoint returns details and uses 404 for an unknown product", asy
   assert.equal(missing.status, 404);
 });
 
+test("unknown routes and malformed category paths return client errors", async () => {
+  const missingRoute = await apiRequest("/api/not-a-route");
+  assert.equal(missingRoute.status, 404);
+
+  const malformedCategory = await apiRequest("/api/categories/%ZZ/products");
+  assert.equal(malformedCategory.status, 400);
+});
+
+test("product source failures return a gateway error", async () => {
+  sourceFailureStatus = 503;
+  try {
+    const result = await apiRequest("/api/products/featured");
+    assert.equal(result.status, 502);
+    assert.match(result.body.error, /temporarily unavailable/i);
+  } finally {
+    sourceFailureStatus = null;
+  }
+});
+
+test("enquiry rejects invalid JSON shapes, content types, and oversized bodies", async () => {
+  const malformed = await apiRequest("/api/enquiries", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: "{",
+  });
+  assert.equal(malformed.status, 400);
+
+  const notObject = await apiRequest("/api/enquiries", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: "null",
+  });
+  assert.equal(notObject.status, 400);
+
+  const wrongType = await apiRequest("/api/enquiries", {
+    method: "POST",
+    headers: { "content-type": "text/plain" },
+    body: "{}",
+  });
+  assert.equal(wrongType.status, 415);
+
+  const tooLarge = await apiRequest("/api/enquiries", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: "x".repeat(16_385),
+  });
+  assert.equal(tooLarge.status, 413);
+});
+
+test("enquiry validates IDs, name, email, and optional message limits", async () => {
+  const validContact = { name: "Ada", email: "ada@example.com", message: "" };
+  const invalidPayloads = [
+    { ...validContact, productId: "1" },
+    { ...validContact, productId: 0 },
+    { ...validContact, productId: -1 },
+    { ...validContact, productId: 1.5 },
+    { ...validContact, productId: 1, name: "   " },
+    { ...validContact, productId: 1, email: "not-an-email" },
+    { ...validContact, productId: 1, email: "a".repeat(250) + "@example.com" },
+    { ...validContact, productId: 1, message: 123 },
+    { ...validContact, productId: 1, message: "x".repeat(2001) },
+    { ...validContact, productId: 1, name: "x".repeat(121) },
+  ];
+
+  for (const payload of invalidPayloads) {
+    const result = await apiRequest("/api/enquiries", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    assert.equal(result.status, 400, `Expected rejection for ${JSON.stringify(payload).slice(0, 80)}`);
+  }
+});
+
 test("enquiry validates contact details and returns a thank-you response", async () => {
   const invalid = await apiRequest("/api/enquiries", {
     method: "POST",
@@ -143,8 +219,24 @@ test("enquiry validates contact details and returns a thank-you response", async
   const accepted = await apiRequest("/api/enquiries", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ productId: 1, name: "Ada", email: "ada@example.com", message: "Please contact me" }),
+    body: JSON.stringify({ productId: 1, name: "Ada", email: "ada@example.com", message: "x".repeat(2000) }),
   });
   assert.equal(accepted.status, 201);
   assert.match(accepted.body.message, /Thank you/i);
+
+  const optionalMessage = await apiRequest("/api/enquiries", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ productId: 1, name: "Ada", email: "ada@example.com" }),
+  });
+  assert.equal(optionalMessage.status, 201);
+});
+
+test("enquiry returns 404 when the product does not exist", async () => {
+  const result = await apiRequest("/api/enquiries", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ productId: 999, name: "Ada", email: "ada@example.com" }),
+  });
+  assert.equal(result.status, 404);
 });
