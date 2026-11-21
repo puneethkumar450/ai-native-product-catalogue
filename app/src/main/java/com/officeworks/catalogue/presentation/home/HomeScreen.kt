@@ -77,6 +77,11 @@ fun HomeScreen(
                         }
                     }
                 }
+                state.categoriesError?.let { message ->
+                    Spacer(Modifier.height(8.dp))
+                    Text(message, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
+                    TextButton(onClick = onRetry) { Text("Retry categories") }
+                }
             } else {
                 TextButton(onClick = onBackToHome) { Text("‹  All products") }
                 Text(state.selectedCategory.replaceFirstChar { it.titlecase() }, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)

@@ -15,6 +15,7 @@ data class HomeUiState(
     val featuredProducts: List<Product> = emptyList(),
     val categoryProducts: List<Product> = emptyList(),
     val categories: List<String> = emptyList(),
+    val categoriesError: String? = null,
     val selectedCategory: String? = null,
     val error: String? = null,
 )
@@ -46,12 +47,17 @@ class HomeViewModel(
                 featuredProducts = products,
                 categoryProducts = emptyList(),
                 categories = emptyList(),
+                categoriesError = null,
             )
 
             val categoriesResult = runCatching { getCategories() }
             if (requestId != catalogueRequestId) return@launch
             categoriesResult.onSuccess { categories ->
-                _uiState.value = _uiState.value.copy(categories = categories)
+                _uiState.value = _uiState.value.copy(categories = categories, categoriesError = null)
+            }.onFailure {
+                _uiState.value = _uiState.value.copy(
+                    categoriesError = "Couldn't load categories. Featured products are still available.",
+                )
             }
         }
     }
