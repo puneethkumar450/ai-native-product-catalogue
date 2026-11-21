@@ -1,8 +1,18 @@
 services:
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "8025:8025"
   api:
     build: ./backend
+    depends_on:
+      - mailpit
     ports:
       - "${PORT:-3000}:3000"
     environment:
       PORT: 3000
       FAKE_STORE_API_URL: ${FAKE_STORE_API_URL:-https://fakestoreapi.com}
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+      SALES_INBOX: ${SALES_INBOX:-sales@example.test}
+      MAIL_FROM: ${MAIL_FROM:-catalogue@example.test}

@@ -5,6 +5,7 @@ import {
   productSource,
   searchProducts,
 } from "./products.js";
+import { sendProductEnquiry } from "./mailer.js";
 
 const port = Number(process.env.PORT ?? 3000);
 
@@ -70,14 +71,14 @@ const server = createServer(async (request, response) => {
 
       const product = await productSource.getById(productId);
       if (!product) return send(response, 404, { error: "Product not found" });
-      console.info("Enquiry received (local email capture):", JSON.stringify({
+      await sendProductEnquiry({
         productId,
         productTitle: product.title,
         name,
         email,
         message,
         receivedAt: new Date().toISOString(),
-      }));
+      });
       return send(response, 201, { message: "Thank you. Your enquiry has been received." });
     }
 

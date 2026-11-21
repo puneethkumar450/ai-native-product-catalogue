@@ -8,6 +8,8 @@ import com.officeworks.catalogue.domain.usecase.GetCategories
 import com.officeworks.catalogue.domain.usecase.GetProductsByCategory
 import com.officeworks.catalogue.domain.usecase.SearchProducts
 import com.officeworks.catalogue.domain.usecase.GetProductDetails
+import com.officeworks.catalogue.domain.model.EnquiryRequest
+import com.officeworks.catalogue.domain.usecase.SubmitEnquiry
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -23,6 +25,10 @@ data class HomeUiState(
     val selectedProduct: Product? = null,
     val isProductLoading: Boolean = false,
     val productError: String? = null,
+    val isEnquiryOpen: Boolean = false,
+    val isSubmittingEnquiry: Boolean = false,
+    val enquiryMessage: String? = null,
+    val enquiryError: String? = null,
     val error: String? = null,
 )
 
@@ -32,6 +38,7 @@ class HomeViewModel(
     private val getProductsByCategory: GetProductsByCategory,
     private val searchProducts: SearchProducts,
     private val getProductDetails: GetProductDetails,
+    private val submitEnquiry: SubmitEnquiry,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState = _uiState.asStateFlow()
@@ -114,5 +121,23 @@ class HomeViewModel(
     fun closeProduct() {
         catalogueRequestId += 1
         _uiState.value = _uiState.value.copy(selectedProduct = null, isProductLoading = false, productError = null)
+    }
+
+    fun openEnquiry() {
+        _uiState.value = _uiState.value.copy(isEnquiryOpen = true, isSubmittingEnquiry = false, enquiryMessage = null, enquiryError = null)
+    }
+
+    fun closeEnquiry() {
+        _uiState.value = _uiState.value.copy(isEnquiryOpen = false, isSubmittingEnquiry = false, enquiryMessage = null, enquiryError = null)
+    }
+
+    fun sendEnquiry(name: String, email: String, message: String) {
+        val product = _uiState.value.selectedProduct ?: return
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isSubmittingEnquiry = true, enquiryError = null)
+            runCatching { submitEnquiry(EnquiryRequest(product.id, name.trim(), email.trim(), message.trim())) }
+                .onSuccess { response -> _uiState.value = _uiState.value.copy(isSubmittingEnquiry = false, enquiryMessage = response) }
+                .onFailure { error -> _uiState.value = _uiState.value.copy(isSubmittingEnquiry = false, enquiryError = error.message?.takeIf(String::isNotBlank) ?: "Couldn't submit your enquiry. Please try again.") }
+        }
     }
 }

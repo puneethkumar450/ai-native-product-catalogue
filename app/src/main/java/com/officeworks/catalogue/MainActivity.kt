@@ -16,10 +16,12 @@ import com.officeworks.catalogue.domain.usecase.GetCategories
 import com.officeworks.catalogue.domain.usecase.GetProductsByCategory
 import com.officeworks.catalogue.domain.usecase.SearchProducts
 import com.officeworks.catalogue.domain.usecase.GetProductDetails
+import com.officeworks.catalogue.domain.usecase.SubmitEnquiry
 import com.officeworks.catalogue.presentation.home.HomeScreen
 import com.officeworks.catalogue.presentation.home.HomeViewModel
 import com.officeworks.catalogue.presentation.home.HomeViewModelFactory
 import com.officeworks.catalogue.presentation.product.ProductDetailScreen
+import com.officeworks.catalogue.presentation.product.EnquiryScreen
 
 class MainActivity : ComponentActivity() {
     private val viewModel: HomeViewModel by viewModels {
@@ -30,6 +32,7 @@ class MainActivity : ComponentActivity() {
             GetProductsByCategory(repository),
             SearchProducts(repository),
             GetProductDetails(repository),
+            SubmitEnquiry(repository),
         )
     }
 
@@ -40,17 +43,25 @@ class MainActivity : ComponentActivity() {
                 val state by viewModel.uiState.collectAsState()
                 val selectedProduct = state.selectedProduct
                 BackHandler(enabled = selectedProduct != null || state.isProductLoading || state.productError != null) {
-                    viewModel.closeProduct()
+                    if (state.isEnquiryOpen) viewModel.closeEnquiry() else viewModel.closeProduct()
                 }
-                if (selectedProduct != null || state.isProductLoading || state.productError != null) {
-                    ProductDetailScreen(
+                when {
+                    selectedProduct != null && state.isEnquiryOpen -> EnquiryScreen(
+                        product = selectedProduct,
+                        isSubmitting = state.isSubmittingEnquiry,
+                        thankYouMessage = state.enquiryMessage,
+                        error = state.enquiryError,
+                        onBack = viewModel::closeEnquiry,
+                        onSubmit = viewModel::sendEnquiry,
+                    )
+                    selectedProduct != null || state.isProductLoading || state.productError != null -> ProductDetailScreen(
                         product = selectedProduct,
                         isLoading = state.isProductLoading,
                         error = state.productError,
                         onBack = viewModel::closeProduct,
+                        onEnquire = viewModel::openEnquiry,
                     )
-                } else {
-                    HomeScreen(
+                    else -> HomeScreen(
                         state = state,
                         onRetry = viewModel::retry,
                         onCategorySelected = viewModel::selectCategory,
