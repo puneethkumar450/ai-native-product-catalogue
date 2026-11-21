@@ -22,6 +22,6 @@ class HomeViewModelFactory(
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         require(modelClass.isAssignableFrom(HomeViewModel::class.java))
-        return HomeViewModel(getFeaturedProducts, getCategories, getProductsByCategory, searchProducts, getAllProducts, getProductDetails) as T
+        return HomeViewModel(getFeaturedProducts, getCategories, getProductsByCategory, searchProducts, getAllProducts, getProductDetails, submitEnquiry) as T
     }
 }

@@ -16,6 +16,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -26,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.officeworks.catalogue.domain.model.Product
+import com.officeworks.catalogue.presentation.components.CatalogueTopAppBar
 
 @Composable
 fun EnquiryScreen(
@@ -40,8 +42,8 @@ fun EnquiryScreen(
     var email by remember(product.id) { mutableStateOf("") }
     var message by remember(product.id) { mutableStateOf("") }
 
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp)) {
-        TextButton(onClick = onBack) { Text("‹  Product details") }
+    Scaffold(topBar = { CatalogueTopAppBar("Product enquiry", onNavigateBack = onBack) }, containerColor = MaterialTheme.colorScheme.background) { padding ->
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(padding).padding(20.dp)) {
         Spacer(Modifier.height(12.dp))
         if (thankYouMessage != null) {
             Column(
@@ -97,5 +99,6 @@ fun EnquiryScreen(
                 else Text("Send enquiry")
             }
         }
+    }
     }
 }

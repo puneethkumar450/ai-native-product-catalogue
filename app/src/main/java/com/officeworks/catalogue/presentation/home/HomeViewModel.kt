@@ -3,13 +3,13 @@ package com.officeworks.catalogue.presentation.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.officeworks.catalogue.domain.model.Product
+import com.officeworks.catalogue.domain.model.EnquiryRequest
 import com.officeworks.catalogue.domain.usecase.GetFeaturedProducts
 import com.officeworks.catalogue.domain.usecase.GetCategories
 import com.officeworks.catalogue.domain.usecase.GetProductsByCategory
 import com.officeworks.catalogue.domain.usecase.SearchProducts
 import com.officeworks.catalogue.domain.usecase.GetAllProducts
 import com.officeworks.catalogue.domain.usecase.GetProductDetails
-import com.officeworks.catalogue.domain.model.EnquiryRequest
 import com.officeworks.catalogue.domain.usecase.SubmitEnquiry
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -144,6 +144,20 @@ class HomeViewModel(
 
     fun closeProduct() {
         _uiState.value = _uiState.value.copy(selectedProduct = null, isProductLoading = false, productError = null)
+    }
+
+    fun openEnquiry() { _uiState.value = _uiState.value.copy(isEnquiryOpen = true, enquiryMessage = null, enquiryError = null) }
+    fun closeEnquiry() { _uiState.value = _uiState.value.copy(isEnquiryOpen = false, isSubmittingEnquiry = false, enquiryMessage = null, enquiryError = null) }
+
+    fun submitEnquiry(name: String, email: String, message: String) {
+        val product = _uiState.value.selectedProduct ?: return
+        if (_uiState.value.isSubmittingEnquiry) return
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isSubmittingEnquiry = true, enquiryError = null)
+            runCatching { submitEnquiry(EnquiryRequest(product.id, name.trim(), email.trim(), message.trim())) }
+                .onSuccess { result -> _uiState.value = _uiState.value.copy(isSubmittingEnquiry = false, enquiryMessage = result) }
+                .onFailure { _uiState.value = _uiState.value.copy(isSubmittingEnquiry = false, enquiryError = "Couldn't submit your enquiry. Please try again.") }
+        }
     }
 
 }

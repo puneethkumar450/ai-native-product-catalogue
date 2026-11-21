@@ -5,7 +5,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.BackHandler
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.collectAsState
@@ -24,7 +23,7 @@ import com.officeworks.catalogue.presentation.home.HomeScreen
 import com.officeworks.catalogue.presentation.home.HomeViewModel
 import com.officeworks.catalogue.presentation.home.HomeViewModelFactory
 import com.officeworks.catalogue.presentation.product.ProductDetailScreen
-import com.officeworks.catalogue.presentation.product.ProductDetailScreen
+import com.officeworks.catalogue.presentation.product.EnquiryScreen
 
 class MainActivity : ComponentActivity() {
     private val viewModel: HomeViewModel by viewModels {
@@ -56,13 +55,22 @@ class MainActivity : ComponentActivity() {
                 ),
             ) {
                 val state by viewModel.uiState.collectAsState()
+                val enquiryOpen = state.isEnquiryOpen && state.selectedProduct != null
                 val productOpen = state.selectedProduct != null || state.isProductLoading || state.productError != null
-                BackHandler(enabled = productOpen) { viewModel.closeProduct() }
-                if (productOpen) ProductDetailScreen(
+                BackHandler(enabled = enquiryOpen || productOpen) { if (enquiryOpen) viewModel.closeEnquiry() else viewModel.closeProduct() }
+                if (enquiryOpen) EnquiryScreen(
+                    product = state.selectedProduct!!,
+                    isSubmitting = state.isSubmittingEnquiry,
+                    thankYouMessage = state.enquiryMessage,
+                    error = state.enquiryError,
+                    onBack = viewModel::closeEnquiry,
+                    onSubmit = viewModel::submitEnquiry,
+                ) else if (productOpen) ProductDetailScreen(
                     product = state.selectedProduct,
                     isLoading = state.isProductLoading,
                     error = state.productError,
                     onBack = viewModel::closeProduct,
+                    onEnquire = viewModel::openEnquiry,
                 ) else HomeScreen(
                     state = state,
                     onRetry = viewModel::retry,
