@@ -19,18 +19,23 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
@@ -53,21 +58,30 @@ fun HomeScreen(
     state: HomeUiState,
     onRetry: () -> Unit,
     onCategorySelected: (String) -> Unit,
+    onSearch: (String) -> Unit,
     onBackToHome: () -> Unit,
 ) {
+    var searchText by rememberSaveable(state.searchQuery) { mutableStateOf(state.searchQuery.orEmpty()) }
     val category = state.selectedCategory
+    val isSearchResults = state.searchQuery != null
     Scaffold(
         topBar = {
             CatalogueTopAppBar(
-                title = category?.replaceFirstChar { it.titlecase() } ?: "Catalogue",
-                onNavigateBack = if (category != null) onBackToHome else null,
+                title = when {
+                    isSearchResults -> "Search results"
+                    category != null -> category.replaceFirstChar { it.titlecase() }
+                    else -> "Catalogue"
+                },
+                onNavigateBack = if (isSearchResults || category != null) onBackToHome else null,
             )
         },
         containerColor = MaterialTheme.colorScheme.background,
     ) { contentPadding ->
         Column(Modifier.fillMaxSize().padding(contentPadding)) {
             Column(Modifier.padding(horizontal = 20.dp, vertical = 20.dp)) {
-                if (category == null) {
+                if (isSearchResults) {
+                    Text("Results for ‘${state.searchQuery}’", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                } else if (category == null) {
                     Text("A better way to browse", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                     Spacer(Modifier.height(8.dp))
                     Text("Find something\nyou’ll love.", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
@@ -96,6 +110,20 @@ fun HomeScreen(
                 } else {
                     Text("Top rated and more", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
+
+                if (category == null) {
+                    Spacer(Modifier.height(16.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedTextField(
+                            value = searchText,
+                            onValueChange = { searchText = it },
+                            modifier = Modifier.weight(1f),
+                            label = { Text("Search products") },
+                            singleLine = true,
+                        )
+                        Button(onClick = { onSearch(searchText) }, enabled = searchText.isNotBlank()) { Text("Search") }
+                    }
+                }
             }
             when {
                 state.isLoading -> Box(Modifier.fillMaxSize().weight(1f), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
@@ -112,8 +140,12 @@ fun HomeScreen(
                     contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
-                    val products = if (category == null) state.featuredProducts else state.categoryProducts
-                    if (products.isEmpty()) item { Text("No products found in this category.", style = MaterialTheme.typography.bodyMedium) }
+                    val products = when {
+                        isSearchResults -> state.searchResults
+                        category != null -> state.categoryProducts
+                        else -> state.featuredProducts
+                    }
+                    if (products.isEmpty()) item { Text("No matching products found.", Modifier.padding(top = 12.dp)) }
                     items(products, key = Product::id) { product -> ProductCard(product) }
                 }
             }

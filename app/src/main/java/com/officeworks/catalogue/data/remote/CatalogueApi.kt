@@ -18,6 +18,9 @@ class CatalogueApi(private val baseUrl: String) {
     fun getProductsByCategory(category: String): List<Product> =
         getProducts("/api/categories/${Uri.encode(category)}/products")
 
+    fun searchProducts(query: String): List<Product> =
+        getProducts("/api/products?q=${Uri.encode(query)}")
+
     private fun getProducts(path: String): List<Product> = JSONArray(get(path)).toProducts()
 
     private fun get(path: String): String {
