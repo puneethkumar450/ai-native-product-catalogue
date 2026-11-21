@@ -2,7 +2,6 @@ package com.officeworks.catalogue.presentation.home
 
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -25,8 +24,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -45,9 +42,6 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.officeworks.catalogue.domain.model.Product
@@ -65,24 +59,20 @@ fun HomeScreen(
     onRetry: () -> Unit,
     onCategorySelected: (String) -> Unit,
     onSearch: (String) -> Unit,
-    onProductClick: (Int) -> Unit,
     onBackToHome: () -> Unit,
-    onClearSearch: () -> Unit,
 ) {
     var searchText by rememberSaveable(state.searchQuery) { mutableStateOf(state.searchQuery.orEmpty()) }
     val category = state.selectedCategory
     val isSearchResults = state.searchQuery != null
-    val isAllProducts = state.isShowingAllProducts
     Scaffold(
         topBar = {
             CatalogueTopAppBar(
                 title = when {
                     isSearchResults -> "Search results"
-                    isAllProducts -> "All products"
                     category != null -> category.replaceFirstChar { it.titlecase() }
                     else -> "Catalogue"
                 },
-                onNavigateBack = if (isSearchResults || isAllProducts || category != null) onBackToHome else null,
+                onNavigateBack = if (isSearchResults || category != null) onBackToHome else null,
             )
         },
         containerColor = MaterialTheme.colorScheme.background,
@@ -91,8 +81,6 @@ fun HomeScreen(
             Column(Modifier.padding(horizontal = 20.dp, vertical = 20.dp)) {
                 if (isSearchResults) {
                     Text("Results for ‘${state.searchQuery}’", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                } else if (isAllProducts) {
-                    Text("Browse the complete catalogue", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 } else if (category == null) {
                     Text("A better way to browse", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                     Spacer(Modifier.height(8.dp))
@@ -132,16 +120,6 @@ fun HomeScreen(
                             modifier = Modifier.weight(1f),
                             label = { Text("Search products") },
                             singleLine = true,
-                            trailingIcon = {
-                                if (searchText.isNotBlank()) {
-                                    IconButton(onClick = {
-                                        searchText = ""
-                                        onClearSearch()
-                                    }) {
-                                        Icon(Icons.Default.Close, contentDescription = "Clear search")
-                                    }
-                                }
-                            },
                         )
                         Button(onClick = { onSearch(searchText) }, enabled = searchText.isNotBlank()) { Text("Search") }
                     }
@@ -164,12 +142,11 @@ fun HomeScreen(
                 ) {
                     val products = when {
                         isSearchResults -> state.searchResults
-                        isAllProducts -> state.allProducts
                         category != null -> state.categoryProducts
                         else -> state.featuredProducts
                     }
                     if (products.isEmpty()) item { Text("No matching products found.", Modifier.padding(top = 12.dp)) }
-                    items(products, key = Product::id) { product -> ProductCard(product, onClick = { onProductClick(product.id) }) }
+                    items(products, key = Product::id) { product -> ProductCard(product) }
                 }
             }
         }
@@ -177,9 +154,9 @@ fun HomeScreen(
 }
 
 @Composable
-private fun ProductCard(product: Product, onClick: () -> Unit) {
+private fun ProductCard(product: Product) {
     ElevatedCard(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface),
     ) {
