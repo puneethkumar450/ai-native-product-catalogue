@@ -26,15 +26,33 @@ class HomeViewModel(
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState = _uiState.asStateFlow()
+    private var catalogueRequestId = 0L
 
     init { loadFeaturedProducts() }
 
     fun loadFeaturedProducts() {
+        val requestId = ++catalogueRequestId
         viewModelScope.launch {
-            _uiState.value = HomeUiState(isLoading = true)
-            runCatching { getFeaturedProducts() to getCategories() }
-                .onSuccess { (products, categories) -> _uiState.value = HomeUiState(isLoading = false, featuredProducts = products, categories = categories) }
-                .onFailure { _uiState.value = _uiState.value.copy(isLoading = false, error = "Couldn't load catalogue. Check the API URL and try again.") }
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null, selectedCategory = null)
+            val featuredResult = runCatching { getFeaturedProducts() }
+            if (requestId != catalogueRequestId) return@launch
+            val products = featuredResult.getOrElse {
+                _uiState.value = _uiState.value.copy(isLoading = false, error = "Couldn't load featured products. Check the API URL and try again.")
+                return@launch
+            }
+
+            _uiState.value = _uiState.value.copy(
+                isLoading = false,
+                featuredProducts = products,
+                categoryProducts = emptyList(),
+                categories = emptyList(),
+            )
+
+            val categoriesResult = runCatching { getCategories() }
+            if (requestId != catalogueRequestId) return@launch
+            categoriesResult.onSuccess { categories ->
+                _uiState.value = _uiState.value.copy(categories = categories)
+            }
         }
     }
 
@@ -44,15 +62,18 @@ class HomeViewModel(
     }
 
     fun selectCategory(category: String) {
+        val requestId = ++catalogueRequestId
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null, selectedCategory = category)
-            runCatching { getProductsByCategory(category) }
-                .onSuccess { products -> _uiState.value = _uiState.value.copy(isLoading = false, categoryProducts = products) }
+            val result = runCatching { getProductsByCategory(category) }
+            if (requestId != catalogueRequestId || _uiState.value.selectedCategory != category) return@launch
+            result.onSuccess { products -> _uiState.value = _uiState.value.copy(isLoading = false, categoryProducts = products) }
                 .onFailure { _uiState.value = _uiState.value.copy(isLoading = false, error = "Couldn't load this category. Please try again.") }
         }
     }
 
     fun backToHome() {
+        catalogueRequestId += 1
         _uiState.value = _uiState.value.copy(isLoading = false, error = null, selectedCategory = null)
     }
 }
