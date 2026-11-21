@@ -33,7 +33,14 @@ Configure the Android app's API base URL per build/run configuration:
 - **Android Emulator:** `http://10.0.2.2:3000` reaches port 3000 on the development computer.
 - **Physical Android device:** use `http://<computer-LAN-IP>:3000`, for example `http://192.168.1.20:3000`. Put the phone and computer on the same Wi-Fi and allow connections to port 3000 in the computer firewall.
 
-The backend binds to `0.0.0.0`, which allows the physical-device option. For local HTTP on Android, enable cleartext traffic in the debug build only; use HTTPS for a deployed backend. The Android project should expose the API URL as a build configuration value so it can be changed without editing app source.
+The backend binds to `0.0.0.0`, which allows the physical-device option. For local HTTP on Android, cleartext traffic is enabled only in the debug manifest; use HTTPS for a deployed backend. The app reads its URL from `BuildConfig.API_BASE_URL`, defaulting to the emulator URL. Override it without editing app source:
+
+```sh
+# Physical device; replace the address with your computer's LAN IP
+./gradlew installDebug -PAPI_BASE_URL=http://192.168.1.20:3000
+```
+
+Requires JDK 17 and Android SDK platform 36. From the repository root run `./gradlew installDebug` with an emulator running. This first Android slice displays the five featured products.
 
 ### API routes
 
