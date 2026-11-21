@@ -2,3 +2,8 @@ backend/node_modules/
 backend/dist/
 .env
 backend/.env
+local.properties
+.gradle/
+**/build/
+*.iml
+.idea/
