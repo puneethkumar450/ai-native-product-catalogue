@@ -1,0 +1,33 @@
+package com.officeworks.catalogue
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.viewModels
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import com.officeworks.catalogue.data.remote.CatalogueApi
+import com.officeworks.catalogue.data.repository.ProductRepositoryImpl
+import com.officeworks.catalogue.domain.usecase.GetFeaturedProducts
+import com.officeworks.catalogue.presentation.home.HomeScreen
+import com.officeworks.catalogue.presentation.home.HomeViewModel
+import com.officeworks.catalogue.presentation.home.HomeViewModelFactory
+
+class MainActivity : ComponentActivity() {
+    private val viewModel: HomeViewModel by viewModels {
+        val repository = ProductRepositoryImpl(CatalogueApi(BuildConfig.API_BASE_URL))
+        HomeViewModelFactory(GetFeaturedProducts(repository))
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            MaterialTheme(colorScheme = lightColorScheme()) {
+                val state by viewModel.uiState.collectAsState()
+                HomeScreen(state = state, onRetry = viewModel::retry)
+            }
+        }
+    }
+}
