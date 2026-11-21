@@ -7,6 +7,7 @@ import com.officeworks.catalogue.domain.usecase.GetFeaturedProducts
 import com.officeworks.catalogue.domain.usecase.GetCategories
 import com.officeworks.catalogue.domain.usecase.GetProductsByCategory
 import com.officeworks.catalogue.domain.usecase.SearchProducts
+import com.officeworks.catalogue.domain.usecase.GetProductDetails
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -19,6 +20,9 @@ data class HomeUiState(
     val selectedCategory: String? = null,
     val searchQuery: String? = null,
     val searchResults: List<Product> = emptyList(),
+    val selectedProduct: Product? = null,
+    val isProductLoading: Boolean = false,
+    val productError: String? = null,
     val error: String? = null,
 )
 
@@ -27,6 +31,7 @@ class HomeViewModel(
     private val getCategories: GetCategories,
     private val getProductsByCategory: GetProductsByCategory,
     private val searchProducts: SearchProducts,
+    private val getProductDetails: GetProductDetails,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState = _uiState.asStateFlow()
@@ -93,5 +98,18 @@ class HomeViewModel(
     fun backToHome() {
         catalogueRequestId += 1
         _uiState.value = _uiState.value.copy(isLoading = false, error = null, selectedCategory = null, searchQuery = null)
+    }
+
+    fun openProduct(id: Int) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isProductLoading = true, productError = null)
+            runCatching { getProductDetails(id) }
+                .onSuccess { product -> _uiState.value = _uiState.value.copy(isProductLoading = false, selectedProduct = product) }
+                .onFailure { _uiState.value = _uiState.value.copy(isProductLoading = false, productError = "Couldn't load product details. Please try again.") }
+        }
+    }
+
+    fun closeProduct() {
+        _uiState.value = _uiState.value.copy(selectedProduct = null, isProductLoading = false, productError = null)
     }
 }

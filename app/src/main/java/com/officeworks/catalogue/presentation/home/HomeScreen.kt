@@ -3,6 +3,7 @@ package com.officeworks.catalogue.presentation.home
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -60,6 +61,7 @@ fun HomeScreen(
     onRetry: () -> Unit,
     onCategorySelected: (String) -> Unit,
     onSearch: (String) -> Unit,
+    onProductClick: (Int) -> Unit,
     onBackToHome: () -> Unit,
 ) {
     var searchText by rememberSaveable(state.searchQuery) { mutableStateOf(state.searchQuery.orEmpty()) }
@@ -116,15 +118,15 @@ fun HomeScreen(
                     else -> state.featuredProducts
                 }
                 if (products.isEmpty()) item { Text("No matching products found.", Modifier.padding(top = 12.dp)) }
-                items(products, key = Product::id) { product -> ProductCard(product) }
+                items(products, key = Product::id) { product -> ProductCard(product, onClick = { onProductClick(product.id) }) }
             }
         }
     }
 }
 
 @Composable
-private fun ProductCard(product: Product) {
-    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+private fun ProductCard(product: Product, onClick: () -> Unit) {
+    Card(Modifier.fillMaxWidth().clickable(onClick = onClick), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Row(Modifier.padding(14.dp), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
             ProductImage(product.imageUrl)
             Column(Modifier.weight(1f)) {
