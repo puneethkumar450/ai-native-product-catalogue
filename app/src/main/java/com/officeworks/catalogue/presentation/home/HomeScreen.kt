@@ -9,21 +9,20 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -38,6 +37,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.officeworks.catalogue.domain.model.Product
+import com.officeworks.catalogue.presentation.components.CatalogueTopAppBar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.net.HttpURLConnection
@@ -47,26 +47,29 @@ import java.util.Locale
 
 @Composable
 fun HomeScreen(state: HomeUiState, onRetry: () -> Unit) {
-    Column(
-        Modifier.fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .windowInsetsPadding(WindowInsets.safeDrawing),
-    ) {
-        Column(Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
-            Text("CATALOGUE", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-            Spacer(Modifier.height(8.dp))
-            Text("Find something\nyou’ll love.", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.height(8.dp))
-            Text("Featured products", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        when {
-            state.isLoading -> Box(Modifier.fillMaxSize().weight(1f), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-            state.error != null -> Column(Modifier.fillMaxSize().weight(1f).padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                Text(state.error)
-                androidx.compose.material3.TextButton(onClick = onRetry) { Text("Try again") }
+    Scaffold(
+        topBar = { CatalogueTopAppBar(title = "Catalogue") },
+        containerColor = MaterialTheme.colorScheme.background,
+    ) { contentPadding ->
+        Column(Modifier.fillMaxSize().padding(contentPadding)) {
+            Column(Modifier.padding(horizontal = 20.dp, vertical = 20.dp)) {
+                Text("A better way to browse", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                Spacer(Modifier.height(8.dp))
+                Text("Find something\nyou’ll love.", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(20.dp))
+                Text("Featured products", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                Spacer(Modifier.height(4.dp))
+                Text("A few favourites to get you started", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            else -> LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(state.featuredProducts, key = Product::id) { product -> ProductCard(product) }
+            when {
+                state.isLoading -> Box(Modifier.fillMaxSize().weight(1f), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+                state.error != null -> Column(Modifier.fillMaxSize().weight(1f).padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                    Text(state.error)
+                    androidx.compose.material3.TextButton(onClick = onRetry) { Text("Try again") }
+                }
+                else -> LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    items(state.featuredProducts, key = Product::id) { product -> ProductCard(product) }
+                }
             }
         }
     }
@@ -74,16 +77,22 @@ fun HomeScreen(state: HomeUiState, onRetry: () -> Unit) {
 
 @Composable
 private fun ProductCard(product: Product) {
-    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface),
+    ) {
         Row(Modifier.padding(14.dp), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            ProductImage(product.imageUrl)
+            ProductImage(product.imageUrl, size = 104.dp)
             Column(Modifier.weight(1f)) {
-                Text(product.category.uppercase(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-                Spacer(Modifier.height(5.dp))
+                Text(product.category.replaceFirstChar { it.titlecase() }, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                Spacer(Modifier.height(7.dp))
                 Text(product.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                Spacer(Modifier.height(8.dp))
-                Text(NumberFormat.getCurrencyInstance(Locale.US).format(product.price), style = MaterialTheme.typography.titleSmall)
-                product.rating?.let { Text("★ ${"%.1f".format(it)}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary) }
+                Spacer(Modifier.height(10.dp))
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(NumberFormat.getCurrencyInstance(Locale.US).format(product.price), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    product.rating?.let { Text("★ ${"%.1f".format(it)}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary) }
+                }
             }
         }
     }
