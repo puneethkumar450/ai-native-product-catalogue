@@ -8,7 +8,7 @@ export interface Product {
   rating?: { rate: number; count: number };
 }
 
-const featuredProductIds = new Set([1, 2, 3, 4, 5]);
+const featuredProductCount = 5;
 const apiBaseUrl = (process.env.FAKE_STORE_API_URL ?? "https://fakestoreapi.com").replace(/\/$/, "");
 
 async function request<T>(path: string): Promise<T> {
@@ -32,7 +32,14 @@ export const productSource = {
 
 export async function getFeaturedProducts(): Promise<Product[]> {
   const products = await productSource.getAll();
-  return products.filter((product) => featuredProductIds.has(product.id));
+  return [...products]
+    .sort((a, b) => {
+      const ratingDifference = (b.rating?.rate ?? 0) - (a.rating?.rate ?? 0);
+      if (ratingDifference !== 0) return ratingDifference;
+      const ratingCountDifference = (b.rating?.count ?? 0) - (a.rating?.count ?? 0);
+      return ratingCountDifference !== 0 ? ratingCountDifference : a.id - b.id;
+    })
+    .slice(0, featuredProductCount);
 }
 
 export async function getCategoryProducts(category: string): Promise<Product[]> {

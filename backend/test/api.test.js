@@ -101,10 +101,15 @@ test("health check returns ok", async () => {
   assert.deepEqual(result.body, { status: "ok" });
 });
 
-test("featured endpoint returns the configured five products", async () => {
+test("featured endpoint returns the five highest-rated products in rating order", async () => {
   const result = await apiRequest("/api/products/featured");
   assert.equal(result.status, 200);
-  assert.deepEqual(result.body.map((product) => product.id), [1, 2, 3, 4, 5]);
+  assert.equal(result.body.length, 5);
+  assert.deepEqual(result.body.map((product) => product.id), [2, 5, 1, 4, 3]);
+  assert.deepEqual(
+    result.body.map((product) => product.rating.rate),
+    [4.8, 4.4, 4.2, 4.1, 3.9],
+  );
 });
 
 test("categories endpoint returns available categories", async () => {
